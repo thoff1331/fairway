@@ -27,6 +27,7 @@ export type CourseResult = {
   state: string;
   /** Curated booking-platform link when known, else the course's own website, else null. */
   linkUrl: string | null;
+  phone: string | null;
   distanceMiles: number;
 };
 
@@ -52,6 +53,7 @@ export async function findNearbyCourses(
       city: course.city,
       state: course.state,
       linkUrl: course.bookingUrl ?? course.website,
+      phone: course.phone,
       distanceMiles: haversineMiles(origin, { lat: course.lat, lng: course.lng }),
     }))
     .filter((c) => c.distanceMiles <= radiusMiles)

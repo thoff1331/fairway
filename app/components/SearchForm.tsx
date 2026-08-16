@@ -2,24 +2,11 @@
 
 import { useState } from "react";
 import type { CourseResult } from "@/lib/search";
-import { buildBookingLink, googleSearchFallback } from "@/lib/bookingLink";
-
-type TimeRange = "any" | "morning" | "midday" | "afternoon" | "evening";
-
-const TIME_RANGE_LABELS: Record<TimeRange, string> = {
-  any: "Any time",
-  morning: "Morning (6am–10am)",
-  midday: "Midday (10am–1pm)",
-  afternoon: "Afternoon (1pm–4pm)",
-  evening: "Evening (4pm–close)",
-};
+import { googleSearchFallback } from "@/lib/bookingLink";
 
 export default function SearchForm() {
   const [zip, setZip] = useState("");
   const [radius, setRadius] = useState(25);
-  const [date, setDate] = useState("");
-  const [players, setPlayers] = useState(4);
-  const [timeRange, setTimeRange] = useState<TimeRange>("any");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +39,9 @@ export default function SearchForm() {
     <div className="flex w-full max-w-2xl flex-col gap-8">
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-2 gap-4 rounded-xl border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-zinc-900 sm:grid-cols-4"
+        className="grid grid-cols-2 gap-4 rounded-xl border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-zinc-900"
       >
-        <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
+        <label className="col-span-1 flex flex-col gap-1 text-sm">
           Zip code
           <input
             required
@@ -67,7 +54,7 @@ export default function SearchForm() {
           />
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
+        <label className="col-span-1 flex flex-col gap-1 text-sm">
           Radius (mi)
           <input
             type="number"
@@ -79,51 +66,10 @@ export default function SearchForm() {
           />
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
-          Date
-          <input
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="rounded-md border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          />
-        </label>
-
-        <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
-          Players
-          <select
-            value={players}
-            onChange={(e) => setPlayers(Number(e.target.value))}
-            className="rounded-md border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          >
-            {[1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-4">
-          Time range
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-            className="rounded-md border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          >
-            {Object.entries(TIME_RANGE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <button
           type="submit"
           disabled={loading}
-          className="col-span-2 mt-2 rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50 sm:col-span-4"
+          className="col-span-2 mt-2 rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
         >
           {loading ? "Searching…" : "Find courses"}
         </button>
@@ -144,9 +90,7 @@ export default function SearchForm() {
           )}
 
           {results.map((course) => {
-            const link = course.linkUrl
-              ? buildBookingLink(course.linkUrl, { date, players })
-              : googleSearchFallback(course.name, course.city, course.state);
+            const link = course.linkUrl ?? googleSearchFallback(course.name, course.city, course.state);
 
             return (
               <div
@@ -159,14 +103,24 @@ export default function SearchForm() {
                     {course.city}, {course.state} · {course.distanceMiles.toFixed(1)} mi
                   </p>
                 </div>
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 rounded-md border border-black/10 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-                >
-                  {course.linkUrl ? "Visit course site" : "Find booking page"}
-                </a>
+                <div className="flex shrink-0 items-center gap-2">
+                  {course.phone && (
+                    <a
+                      href={`tel:${course.phone}`}
+                      className="rounded-md border border-black/10 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                    >
+                      Call
+                    </a>
+                  )}
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-black/10 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                  >
+                    {course.linkUrl ? "Visit course site" : "Search online"}
+                  </a>
+                </div>
               </div>
             );
           })}

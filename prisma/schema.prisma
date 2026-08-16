@@ -23,6 +23,7 @@ model Course {
   lat         Float
   lng         Float
   website     String?
+  phone       String?
   bookingUrl  String?
   updatedAt   DateTime @updatedAt
 

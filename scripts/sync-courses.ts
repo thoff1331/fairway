@@ -21,6 +21,7 @@ type OpenGolfCourse = {
   city: string | null;
   state: string | null;
   website: string | null;
+  phone: string | null;
 };
 
 async function searchByRadius(lat: number, lng: number, radiusMiles: number): Promise<OpenGolfCourse[]> {
@@ -68,6 +69,7 @@ async function main() {
         lat: course.latitude,
         lng: course.longitude,
         website: course.website,
+        phone: course.phone,
       },
       update: {
         name: course.name,
@@ -76,6 +78,7 @@ async function main() {
         lat: course.latitude,
         lng: course.longitude,
         website: course.website,
+        phone: course.phone,
       },
     });
 
