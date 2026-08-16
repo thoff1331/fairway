@@ -22,6 +22,7 @@ type OpenGolfCourse = {
   state: string | null;
   website: string | null;
   phone: string | null;
+  type: string | null;
 };
 
 async function searchByRadius(lat: number, lng: number, radiusMiles: number): Promise<OpenGolfCourse[]> {
@@ -55,9 +56,15 @@ async function main() {
   const results = await searchByRadius(origin.lat, origin.lng, radiusMiles);
 
   let total = 0;
+  let skippedPrivate = 0;
 
   for (const course of results) {
     if (!course.latitude || !course.longitude) continue;
+
+    if (course.type?.toLowerCase().includes("private")) {
+      skippedPrivate += 1;
+      continue;
+    }
 
     await prisma.course.upsert({
       where: { sourceApiId: course.id },
@@ -85,7 +92,9 @@ async function main() {
     total += 1;
   }
 
-  console.log(`Done. ${total} of ${results.length} course(s) synced.`);
+  console.log(
+    `Done. ${total} of ${results.length} course(s) synced (${skippedPrivate} private course(s) excluded).`
+  );
 }
 
 main()
