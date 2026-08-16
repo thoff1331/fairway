@@ -144,8 +144,8 @@ export default function SearchForm() {
           )}
 
           {results.map((course) => {
-            const link = course.bookingUrl
-              ? buildBookingLink(course.bookingUrl, { date, players })
+            const link = course.linkUrl
+              ? buildBookingLink(course.linkUrl, { date, players })
               : googleSearchFallback(course.name, course.city, course.state);
 
             return (
@@ -156,8 +156,7 @@ export default function SearchForm() {
                 <div>
                   <p className="font-medium">{course.name}</p>
                   <p className="text-sm text-zinc-500">
-                    {course.address}, {course.city}, {course.state} ·{" "}
-                    {course.distanceMiles.toFixed(1)} mi
+                    {course.city}, {course.state} · {course.distanceMiles.toFixed(1)} mi
                   </p>
                 </div>
                 <a
@@ -166,7 +165,7 @@ export default function SearchForm() {
                   rel="noopener noreferrer"
                   className="shrink-0 rounded-md border border-black/10 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                 >
-                  {course.bookingUrl ? "Book" : "Find booking page"}
+                  {course.linkUrl ? "Visit course site" : "Find booking page"}
                 </a>
               </div>
             );

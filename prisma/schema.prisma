@@ -18,11 +18,11 @@ model Course {
   id          String   @id @default(cuid())
   sourceApiId String   @unique
   name        String
-  address     String
   city        String
   state       String
   lat         Float
   lng         Float
+  website     String?
   bookingUrl  String?
   updatedAt   DateTime @updatedAt
 

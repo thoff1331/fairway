@@ -23,10 +23,10 @@ function haversineMiles(a: Coordinates, b: Coordinates) {
 export type CourseResult = {
   id: string;
   name: string;
-  address: string;
   city: string;
   state: string;
-  bookingUrl: string | null;
+  /** Curated booking-platform link when known, else the course's own website, else null. */
+  linkUrl: string | null;
   distanceMiles: number;
 };
 
@@ -49,10 +49,9 @@ export async function findNearbyCourses(
     .map((course) => ({
       id: course.id,
       name: course.name,
-      address: course.address,
       city: course.city,
       state: course.state,
-      bookingUrl: course.bookingUrl,
+      linkUrl: course.bookingUrl ?? course.website,
       distanceMiles: haversineMiles(origin, { lat: course.lat, lng: course.lng }),
     }))
     .filter((c) => c.distanceMiles <= radiusMiles)
