@@ -4,24 +4,27 @@ import { useState } from "react";
 import type { CourseResult } from "@/lib/search";
 import { googleSearchFallback } from "@/lib/bookingLink";
 
+type Origin = { city: string; state: string };
+
 export default function SearchForm() {
   const [zip, setZip] = useState("");
   const [radius, setRadius] = useState(25);
 
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<CourseResult[] | null>(null);
-  const [origin, setOrigin] = useState<{ city: string; state: string } | null>(null);
+  const [origin, setOrigin] = useState<Origin | null>(null);
+  const [searchedLabel, setSearchedLabel] = useState<string>("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function runSearch(params: URLSearchParams, label: string) {
     setLoading(true);
     setError(null);
     setResults(null);
     setOrigin(null);
 
     try {
-      const res = await fetch(`/api/search?zip=${encodeURIComponent(zip)}&radius=${radius}`);
+      const res = await fetch(`/api/search?${params.toString()}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -31,11 +34,46 @@ export default function SearchForm() {
 
       setResults(data.courses);
       setOrigin(data.origin);
+      setSearchedLabel(label);
     } catch {
       setError("Could not reach the server. Try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const params = new URLSearchParams({ zip, radius: String(radius) });
+    runSearch(params, zip);
+  }
+
+  function handleUseLocation() {
+    if (!navigator.geolocation) {
+      setError("Location isn't supported in this browser.");
+      return;
+    }
+
+    setLocating(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        setZip("");
+        const params = new URLSearchParams({
+          lat: String(position.coords.latitude),
+          lng: String(position.coords.longitude),
+          radius: String(radius),
+        });
+        runSearch(params, "your location");
+      },
+      () => {
+        setLocating(false);
+        setError("Could not get your location. Check your browser's location permission.");
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
   }
 
   return (
@@ -71,10 +109,19 @@ export default function SearchForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || locating}
           className="col-span-2 mt-2 rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
         >
           {loading ? "Searching…" : "Find courses"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleUseLocation}
+          disabled={loading || locating}
+          className="col-span-2 rounded-md border border-black/10 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+        >
+          {locating ? "Getting your location…" : "Use my current location"}
         </button>
       </form>
 
@@ -83,13 +130,14 @@ export default function SearchForm() {
       {results && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-zinc-500">
-            {results.length} course{results.length === 1 ? "" : "s"} within {radius} miles of {zip}
-            {origin && ` (${origin.city}, ${origin.state})`}
+            {results.length} course{results.length === 1 ? "" : "s"} within {radius} miles of{" "}
+            {searchedLabel}
+            {origin && (origin.city || origin.state) && ` (${origin.city}, ${origin.state})`}
           </p>
 
           {results.length === 0 && (
             <p className="text-sm text-zinc-500">
-              No courses found. Try a larger radius or a different zip code.
+              No courses found. Try a larger radius or a different location.
             </p>
           )}
 

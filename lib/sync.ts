@@ -74,11 +74,17 @@ export async function syncCoursesNear(origin: Coordinates, radiusMiles: number):
 }
 
 /**
- * Syncs a zip/radius area from OpenGolf only if it hasn't been synced with at least
- * this radius within the freshness window — avoids hammering the API on every search.
+ * Syncs an area from OpenGolf only if it hasn't been synced with at least this radius
+ * within the freshness window — avoids hammering the API on every search. `locationKey`
+ * is a zip code or a rounded "lat,lng" string, used to dedupe repeat searches of the
+ * same area regardless of whether the user searched by zip or current location.
  */
-export async function syncIfStale(zip: string, origin: Coordinates, radiusMiles: number): Promise<void> {
-  const log = await prisma.syncLog.findUnique({ where: { zip } });
+export async function syncIfStale(
+  locationKey: string,
+  origin: Coordinates,
+  radiusMiles: number
+): Promise<void> {
+  const log = await prisma.syncLog.findUnique({ where: { zip: locationKey } });
 
   const isFresh =
     log &&
@@ -90,8 +96,8 @@ export async function syncIfStale(zip: string, origin: Coordinates, radiusMiles:
   await syncCoursesNear(origin, radiusMiles);
 
   await prisma.syncLog.upsert({
-    where: { zip },
-    create: { zip, radiusMiles },
+    where: { zip: locationKey },
+    create: { zip: locationKey, radiusMiles },
     update: { radiusMiles: Math.max(log?.radiusMiles ?? 0, radiusMiles) },
   });
 }
