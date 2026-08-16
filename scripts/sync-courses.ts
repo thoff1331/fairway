@@ -1,8 +1,7 @@
 /**
- * Pulls courses from OpenGolf API (opengolfapi.org) and upserts them into the local
- * `courses` table. OpenGolf supports a native lat/lng + radius search and returns
- * coordinates directly, so this script geocodes a zip via the same helper the app
- * uses (lib/geocode.ts) and queries around it — no separate geocoding pass needed.
+ * Manually syncs courses near a zip code from OpenGolf API into the local `courses`
+ * table. The app itself also auto-syncs on search (see lib/sync.ts), so this script
+ * is mainly useful for pre-warming an area or forcing a refresh.
  *
  * Usage:
  *   npx tsx scripts/sync-courses.ts 78746 50
@@ -10,32 +9,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { geocodeZip } from "@/lib/geocode";
-
-const API_BASE = "https://api.opengolfapi.org/v1";
-
-type OpenGolfCourse = {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  city: string | null;
-  state: string | null;
-  website: string | null;
-  phone: string | null;
-  type: string | null;
-};
-
-async function searchByRadius(lat: number, lng: number, radiusMiles: number): Promise<OpenGolfCourse[]> {
-  const url = `${API_BASE}/courses/search?lat=${lat}&lng=${lng}&radius=${radiusMiles}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`OpenGolf API request failed (${res.status}): ${await res.text()}`);
-  }
-
-  const data = await res.json();
-  return data.courses ?? [];
-}
+import { syncCoursesNear } from "@/lib/sync";
 
 async function main() {
   const [zip, radiusArg] = process.argv.slice(2);
@@ -53,48 +27,15 @@ async function main() {
   }
 
   console.log(`Searching within ${radiusMiles} miles of ${zip} (${origin.lat}, ${origin.lng})...`);
-  const results = await searchByRadius(origin.lat, origin.lng, radiusMiles);
+  const { synced, skippedPrivate, total } = await syncCoursesNear(origin, radiusMiles);
 
-  let total = 0;
-  let skippedPrivate = 0;
+  await prisma.syncLog.upsert({
+    where: { zip },
+    create: { zip, radiusMiles },
+    update: { radiusMiles },
+  });
 
-  for (const course of results) {
-    if (!course.latitude || !course.longitude) continue;
-
-    if (course.type?.toLowerCase().includes("private")) {
-      skippedPrivate += 1;
-      continue;
-    }
-
-    await prisma.course.upsert({
-      where: { sourceApiId: course.id },
-      create: {
-        sourceApiId: course.id,
-        name: course.name,
-        city: course.city ?? "",
-        state: course.state ?? "",
-        lat: course.latitude,
-        lng: course.longitude,
-        website: course.website,
-        phone: course.phone,
-      },
-      update: {
-        name: course.name,
-        city: course.city ?? "",
-        state: course.state ?? "",
-        lat: course.latitude,
-        lng: course.longitude,
-        website: course.website,
-        phone: course.phone,
-      },
-    });
-
-    total += 1;
-  }
-
-  console.log(
-    `Done. ${total} of ${results.length} course(s) synced (${skippedPrivate} private course(s) excluded).`
-  );
+  console.log(`Done. ${synced} of ${total} course(s) synced (${skippedPrivate} private course(s) excluded).`);
 }
 
 main()

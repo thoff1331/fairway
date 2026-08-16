@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { geocodeZip } from "@/lib/geocode";
 import { findNearbyCourses } from "@/lib/search";
+import { syncIfStale } from "@/lib/sync";
 
 export async function GET(req: NextRequest) {
   const zip = req.nextUrl.searchParams.get("zip");
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
       { status: 404 }
     );
   }
+
+  await syncIfStale(zip, origin, radiusMiles);
 
   const courses = await findNearbyCourses(origin, radiusMiles);
 
