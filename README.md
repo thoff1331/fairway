@@ -4,6 +4,10 @@ Find public golf courses near you and get in touch to book — by zip code or yo
 
 Live: [fairway-theta.vercel.app](https://fairway-theta.vercel.app)
 
+
+<img width="1907" height="928" alt="Screenshot 2026-08-16 at 3 05 19 PM" src="https://github.com/user-attachments/assets/a0a85722-3ac5-483d-8caa-3f15fb600071" />
+
+
 ## What it does
 
 Fairway is a golf course finder. Search a zip code (or share your location) and a radius, and it returns nearby **public** courses sorted by distance, each with a way to reach them — no live tee-time booking, since that would require a data-sharing agreement with individual courses or golf booking platforms. Instead, it gets you to the point of booking as fast as possible: a phone number to call, or a link to the course's own site.
@@ -48,3 +52,4 @@ Open [http://localhost:3010](http://localhost:3010).
 
 - No live tee-time availability — this is a course *finder*, not a booking system, since that requires a data agreement most booking platforms don't offer publicly.
 - Course data depends on OpenGolf API's coverage, which isn't exhaustive everywhere.
+
