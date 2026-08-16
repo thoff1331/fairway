@@ -11,12 +11,14 @@ export default function SearchForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<CourseResult[] | null>(null);
+  const [origin, setOrigin] = useState<{ city: string; state: string } | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setResults(null);
+    setOrigin(null);
 
     try {
       const res = await fetch(`/api/search?zip=${encodeURIComponent(zip)}&radius=${radius}`);
@@ -28,6 +30,7 @@ export default function SearchForm() {
       }
 
       setResults(data.courses);
+      setOrigin(data.origin);
     } catch {
       setError("Could not reach the server. Try again.");
     } finally {
@@ -81,6 +84,7 @@ export default function SearchForm() {
         <div className="flex flex-col gap-3">
           <p className="text-sm text-zinc-500">
             {results.length} course{results.length === 1 ? "" : "s"} within {radius} miles of {zip}
+            {origin && ` (${origin.city}, ${origin.state})`}
           </p>
 
           {results.length === 0 && (
