@@ -1,4 +1,4 @@
-import { redis } from "./redis";
+import { cacheGet, cacheSet } from "./redis";
 
 export type Coordinates = { lat: number; lng: number };
 export type ZipLocation = Coordinates & { city: string; state: string };
@@ -11,10 +11,8 @@ const coordsCacheKey = (lat: number, lng: number) =>
 export async function geocodeZip(zip: string): Promise<ZipLocation | null> {
   const cacheKey = zipCacheKey(zip);
 
-  if (redis) {
-    const cached = await redis.get<ZipLocation>(cacheKey);
-    if (cached) return cached;
-  }
+  const cached = await cacheGet<ZipLocation>(cacheKey);
+  if (cached) return cached;
 
   const res = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`);
   if (!res.ok) return null;
@@ -30,9 +28,7 @@ export async function geocodeZip(zip: string): Promise<ZipLocation | null> {
     state: place["state abbreviation"],
   };
 
-  if (redis) {
-    await redis.set(cacheKey, location, { ex: GEOCODE_CACHE_TTL_SECONDS });
-  }
+  await cacheSet(cacheKey, location, GEOCODE_CACHE_TTL_SECONDS);
 
   return location;
 }
@@ -42,10 +38,8 @@ export type ReverseGeocodeResult = { city: string; state: string } | null;
 export async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult> {
   const cacheKey = coordsCacheKey(lat, lng);
 
-  if (redis) {
-    const cached = await redis.get<ReverseGeocodeResult>(cacheKey);
-    if (cached) return cached;
-  }
+  const cached = await cacheGet<ReverseGeocodeResult>(cacheKey);
+  if (cached) return cached;
 
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
   const res = await fetch(url, {
@@ -64,9 +58,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
 
   const result: ReverseGeocodeResult = { city, state };
 
-  if (redis) {
-    await redis.set(cacheKey, result, { ex: GEOCODE_CACHE_TTL_SECONDS });
-  }
+  await cacheSet(cacheKey, result, GEOCODE_CACHE_TTL_SECONDS);
 
   return result;
 }
