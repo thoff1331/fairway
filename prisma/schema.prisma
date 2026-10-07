@@ -35,3 +35,9 @@ model SyncLog {
   radiusMiles Int
   syncedAt    DateTime @updatedAt
 }
+
+model KeepAlive {
+  id       String   @id
+  pings    Int      @default(0)
+  pingedAt DateTime @updatedAt
+}
